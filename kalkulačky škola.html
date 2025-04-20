@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Výpočet stupníc a úspešnosti</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-image: url('symboly školy.jpg'); /* Updated */
+            background-size: cover;
+            background-repeat: repeat;
+        }
+        .container {
+            max-width: 100%;
+        }
+        @media (min-width: 768px) {
+            .container {
+                max-width: 1200px;
+            }
+        }
+        .calculator-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8rem;
+            margin-bottom: 2rem;
+        }
+        .calculator-container > div{
+            width: 40%;
+        }
+        @media (max-width: 768px){
+            .calculator-container {
+                flex-direction: column;
+                gap: 2rem;
+            }
+            .calculator-container > div{
+                width: 100%;
+            }
+        }
+        .school-info {
+            margin-bottom: 2cm;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        .school-info img{
+            margin-right: 10px;
+        }
+        .text-sm {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="container mx-auto">
+        <div class="flex flex-col items-center school-info">
+            <img src="logo škola.jpg" alt="Logo školy" class="max-w-sm rounded-md mb-2">
+            <p class="text-center text-gray-700 text-sm font-semibold">Základná škola s materskou školou, Námestie Kráľovnej pokoja 4, Prešov</p>
+        </div>
+        <h1 class="text-2xl font-semibold text-blue-600 mb-8 text-center" style="color: #00B0FF;"><i><b>Výpočet stupníc a úspešnosti</b></i></h1>
+        <div class="calculator-container">
+            <div class="bg-white shadow-md rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Kalkulačka bodovej stupnice</h2>
+                <div class="mb-4">
+                    <label for="maxPointsStupnica" class="block text-gray-700 text-sm font-bold mb-2">Maximálny počet bodov:</label>
+                    <input type="number" id="maxPointsStupnica" placeholder="Zadajte maximálny počet bodov" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mb-6">
+                    <button id="calculateBtnStupnica" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" style="background-color: #00B0FF;">Vypočítajte stupnicu</button>
+                </div>
+                <div id="resultStupnica" class="hidden">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Navrhovaná bodová stupnica:</h3>
+                    <table class="min-w-full table-auto rounded-lg hidden" id="resultsTable">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-gray-600 font-semibold uppercase">Známka</th>
+                                <th class="px-4 py-2 text-left text-gray-600 font-semibold uppercase">Percentuálny rozsah</th>
+                                <th class="px-4 py-2 text-left text-gray-600 font-semibold uppercase">Bodový rozsah</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-700">
+                            <tr>
+                                <td class="px-4 py-2">1</td>
+                                <td class="px-4 py-2">100% - 90%</td>
+                                <td class="px-4 py-2" id="range1"></td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2">2</td>
+                                <td class="px-4 py-2">89% - 75%</td>
+                                <td class="px-4 py-2" id="range2"></td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2">3</td>
+                                <td class="px-4 py-2">74% - 50%</td>
+                                <td class="px-4 py-2" id="range3"></td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2">4</td>
+                                <td class="px-4 py-2">49% - 25%</td>
+                                <td class="px-4 py-2" id="range4"></td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2">5</td>
+                                <td class="px-4 py-2">24% - 0%</td>
+                                <td class="px-4 py-2" id="range5"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p id="error-message-stupnica" class="mt-4 text-red-500 text-xs italic"></p>
+                </div>
+            </div>
+            <div class="bg-white shadow-md rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Kalkulačka úspešnosti</h2>
+                <div class="mb-4">
+                    <label for="maxPointsUspech" class="block text-gray-700 text-sm font-bold mb-2">Maximálny počet bodov:</label>
+                    <input type="number" id="maxPointsUspech" placeholder="Zadajte maximálny počet bodov" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mb-4">
+                    <label for="achievedPointsUspech" class="block text-gray-700 text-sm font-bold mb-2">Dosiahnutý počet bodov:</label>
+                    <input type="number" id="achievedPointsUspech" placeholder="Zadajte dosiahnutý počet bodov" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mb-6">
+                    <button id="calculateBtnUspech" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" style="background-color: #00B0FF;">Vypočítajte úspešnosť</button>
+                </div>
+                <div id="resultUspech" class="hidden">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Výsledok:</h3>
+                    <p id="percentage" class="text-lg text-green-600 font-semibold"></p>
+                    <p id="error-message-uspech" class="mt-4 text-red-500 text-xs italic"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Kalkulačka bodovej stupnice
+        const maxPointsStupnicaInput = document.getElementById('maxPointsStupnica');
+        const calculateBtnStupnica = document.getElementById('calculateBtnStupnica');
+        const resultStupnicaDiv = document.getElementById('resultStupnica');
+        const resultsTable = document.getElementById('resultsTable');
+        const range1Cell = document.getElementById('range1');
+        const range2Cell = document.getElementById('range2');
+        const range3Cell = document.getElementById('range3');
+        const range4Cell = document.getElementById('range4');
+        const range5Cell = document.getElementById('range5');
+        const errorMessageStupnica = document.getElementById('error-message-stupnica');
+        calculateBtnStupnica.addEventListener('click', () => {
+            const maxPoints = parseFloat(maxPointsStupnicaInput.value);
+            if (isNaN(maxPoints) || maxPoints <= 0) {
+                errorMessageStupnica.textContent = "Prosím zadajte platný maximálny počet bodov.";
+                resultStupnicaDiv.classList.add('hidden');
+                resultsTable.classList.add('hidden');
+                return;
+            }
+            errorMessageStupnica.textContent = "";
+            resultStupnicaDiv.classList.remove('hidden');
+            resultsTable.classList.remove('hidden');
+            const gradeRanges = [
+                { minPercent: 90, maxPercent: 100, cell: range1Cell },
+                { minPercent: 75, maxPercent: 89, cell: range2Cell },
+                { minPercent: 50, maxPercent: 74, cell: range3Cell },
+                { minPercent: 25, maxPercent: 49, cell: range4Cell },
+                { minPercent: 0, maxPercent: 24, cell: range5Cell },
+            ];
+            gradeRanges.forEach(gradeRange => {
+                const minPoints = Math.ceil(maxPoints * (gradeRange.minPercent / 100));
+                const maxPointsCalculated = Math.floor(maxPoints * (gradeRange.maxPercent / 100));
+                gradeRange.cell.textContent = `${maxPointsCalculated} - ${minPoints}`;
+            });
+        });
+        // Kalkulačka úspešnosti
+        const maxPointsUspechInput = document.getElementById('maxPointsUspech');
+        const achievedPointsUspechInput = document.getElementById('achievedPointsUspech');
+        const calculateBtnUspech = document.getElementById('calculateBtnUspech');
+        const resultUspechDiv = document.getElementById('resultUspech');
+        const percentageDisplay = document.getElementById('percentage');
+        const errorMessageUspech = document.getElementById('error-message-uspech');
+        calculateBtnUspech.addEventListener('click', () => {
+            const maxPoints = parseFloat(maxPointsUspechInput.value);
+            const achievedPoints = parseFloat(achievedPointsUspechInput.value);
+            if (isNaN(maxPoints) || maxPoints <= 0 || isNaN(achievedPoints) || achievedPoints < 0) {
+                errorMessageUspech.textContent = "Prosím zadajte platné čísla pre maximálny a dosiahnutý počet bodov.";
+                resultUspechDiv.classList.add('hidden');
+                return;
+            }
+            if (achievedPoints > maxPoints) {
+                errorMessageUspech.textContent = "Dosiahnutý počet bodov nemôže byť väčší ako maximálny počet bodov.";
+                resultUspechDiv.classList.add('hidden');
+                return;
+            }
+            errorMessageUspech.textContent = "";
+            resultUspechDiv.classList.remove('hidden');
+            const percentage = (achievedPoints / maxPoints) * 100;
+            percentageDisplay.textContent = `Úspešnosť: ${percentage.toFixed(2)}%`;
+        });
+    </script>
+</body>
+</html>
