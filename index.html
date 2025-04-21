@@ -9,7 +9,7 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-image: url('symboly školy.jpg'); /* Updated */
+            background-image: url('symboly školy.jpg');
             background-size: cover;
             background-repeat: repeat;
         }
@@ -164,12 +164,16 @@
                 { minPercent: 25, maxPercent: 49, cell: range4Cell },
                 { minPercent: 0, maxPercent: 24, cell: range5Cell },
             ];
+            let previousMinPoints = maxPoints; // Initialize with maxPoints
             gradeRanges.forEach(gradeRange => {
-                const minPoints = Math.ceil(maxPoints * (gradeRange.minPercent / 100));
                 const maxPointsCalculated = Math.floor(maxPoints * (gradeRange.maxPercent / 100));
-                gradeRange.cell.textContent = `${maxPointsCalculated} - ${minPoints}`;
+                const minPoints = gradeRange.minPercent === 0 ? 0 : Math.ceil(maxPoints * (gradeRange.minPercent / 100));
+                const displayMaxPoints = gradeRange.maxPercent === 100 ? maxPoints : previousMinPoints - 1;
+                gradeRange.cell.textContent = `${displayMaxPoints} - ${minPoints}`;
+                previousMinPoints = minPoints; // Store minPoints for the next iteration
             });
         });
+
         // Kalkulačka úspešnosti
         const maxPointsUspechInput = document.getElementById('maxPointsUspech');
         const achievedPointsUspechInput = document.getElementById('achievedPointsUspech');
