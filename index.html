@@ -2,209 +2,1373 @@
 <html lang="sk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Výpočet stupníc a úspešnosti</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="Školská kalkulačka bodových stupníc a percentuálnej úspešnosti pre učiteľov.">
+    <title>EduStupnica | Univerzálna kalkulačka stupníc a hodnotenia žiakov</title>
+    
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        };
+        // Rýchla detekcia témy pred renderom bez prebliknutia (FOUC)
+        (function() {
+            const savedTheme = localStorage.getItem('edustupnica_theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+    
+    <!-- Google Font Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background-image: url('symboly školy.jpg');
-            background-size: cover;
-            background-repeat: repeat;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #e5edfa 50%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: #1e293b;
+            transition: background-color 0.25s ease, color 0.25s ease;
         }
-        .container {
-            max-width: 100%;
+
+        .dark body {
+            background: linear-gradient(135deg, #090d16 0%, #0f172a 50%, #090d16 100%);
+            color: #f1f5f9;
         }
-        @media (min-width: 768px) {
-            .container {
-                max-width: 1200px;
+
+        /* Prevencia automatického zoomu na iOS zariadeniach pri kliknutí do inputu */
+        input, select, textarea, button {
+            font-size: 16px !important;
+        }
+
+        /* Farby pre známky (Svetlý režim) */
+        .grade-card-1 { background-color: #ecfdf5; border-color: #6ee7b7; color: #065f46; }
+        .grade-card-2 { background-color: #f0fdfa; border-color: #5eead4; color: #115e59; }
+        .grade-card-3 { background-color: #fffbeb; border-color: #fcd34d; color: #92400e; }
+        .grade-card-4 { background-color: #fff7ed; border-color: #fdba74; color: #9a3412; }
+        .grade-card-5 { background-color: #fef2f2; border-color: #fca5a5; color: #991b1b; }
+
+        .grade-badge-1 { background-color: #10b981; color: white; }
+        .grade-badge-2 { background-color: #0d9488; color: white; }
+        .grade-badge-3 { background-color: #f59e0b; color: white; }
+        .grade-badge-4 { background-color: #f97316; color: white; }
+        .grade-badge-5 { background-color: #ef4444; color: white; }
+
+        /* Farby pre známky (Tmavý nočný režim) */
+        .dark .grade-card-1 { background-color: rgba(6, 78, 59, 0.35); border-color: #059669; color: #6ee7b7; }
+        .dark .grade-card-2 { background-color: rgba(19, 78, 74, 0.35); border-color: #0d9488; color: #5eead4; }
+        .dark .grade-card-3 { background-color: rgba(120, 53, 15, 0.35); border-color: #d97706; color: #fcd34d; }
+        .dark .grade-card-4 { background-color: rgba(124, 45, 18, 0.35); border-color: #ea580c; color: #fdba74; }
+        .dark .grade-card-5 { background-color: rgba(136, 19, 55, 0.35); border-color: #e11d48; color: #fda4af; }
+
+        .dark .grade-badge-1 { background-color: #059669; color: white; }
+        .dark .grade-badge-2 { background-color: #0d9488; color: white; }
+        .dark .grade-badge-3 { background-color: #d97706; color: white; }
+        .dark .grade-badge-4 { background-color: #ea580c; color: white; }
+        .dark .grade-badge-5 { background-color: #e11d48; color: white; }
+
+        /* Vlastné animácie */
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.97); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fade-in {
+            animation: fadeInScale 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Print štýly pre čisté vytlačenie tabuľky na A4 */
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            html, body {
+                background: white !important;
+                color: black !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                min-height: 100vh !important;
+                height: 100% !important;
+            }
+            body {
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: flex-start !important;
+                align-items: center !important;
+                padding: 1.5cm 2cm !important;
+                box-sizing: border-box !important;
+            }
+            #mainAppWrapper {
+                width: 100% !important;
+                max-width: 17.5cm !important;
+                height: calc(100vh - 3cm) !important;
+                min-height: calc(100vh - 3cm) !important;
+                margin: 0 auto !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                box-sizing: border-box !important;
+            }
+            header {
+                box-shadow: none !important;
+                border: none !important;
+                background: transparent !important;
+                padding: 0 0 0.65rem 0 !important;
+                margin-bottom: 0 !important;
+                border-bottom: 2px solid #0f172a !important;
+                border-radius: 0 !important;
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: flex-start !important;
+                text-align: left !important;
+                gap: 0.85rem !important;
+                flex-shrink: 0 !important;
+            }
+            header .logo-container {
+                width: 2.5rem !important;
+                height: 2.5rem !important;
+                border-radius: 0.5rem !important;
+                margin: 0 !important;
+                flex-shrink: 0 !important;
+            }
+            header .logo-container svg {
+                width: 1.4rem !important;
+                height: 1.4rem !important;
+            }
+            header h1 {
+                background: none !important;
+                -webkit-text-fill-color: #2563eb !important;
+                color: #2563eb !important;
+                font-size: 1.3rem !important;
+                line-height: 1.2 !important;
+                margin: 0 !important;
+            }
+            header .header-sub {
+                font-size: 0.65rem !important;
+                margin: 0 !important;
+                color: #64748b !important;
+            }
+            header .header-desc {
+                font-size: 0.8rem !important;
+                margin-top: 0.15rem !important;
+                color: #0f172a !important;
+                font-weight: 600 !important;
+            }
+            main {
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: stretch !important;
+                width: 100% !important;
+                grid-template-columns: 1fr !important;
+                gap: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            main > div {
+                width: 100% !important;
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .print-card {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                justify-content: center !important;
+                flex: 0 0 auto !important;
+            }
+            table {
+                border-collapse: collapse !important;
+                width: 100% !important;
+                margin-top: 15px !important;
+            }
+            th, td {
+                border: 1px solid #333 !important;
+                padding: 8px 12px !important;
+                color: black !important;
+            }
+            th {
+                background-color: #f1f5f9 !important;
             }
         }
-        .calculator-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 8rem;
-            margin-bottom: 2rem;
-        }
-        .calculator-container > div{
-            width: 40%;
-        }
-        @media (max-width: 768px){
-            .calculator-container {
-                flex-direction: column;
-                gap: 2rem;
-            }
-            .calculator-container > div{
-                width: 100%;
-            }
-        }
-        .school-info {
-            margin-bottom: 2cm;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: flex-start;
-        }
-        .school-info img{
-            margin-right: 10px;
-        }
-        .text-sm {
-            font-size: 1.2em;
-        }
-        footer {
-            margin-top: 16cm; /* Updated to 16cm (2 * 8cm) */
+        .print-only {
+            display: none;
         }
     </style>
 </head>
-<body class="bg-gray-100 p-6">
-    <div class="container mx-auto">
-        <div class="flex flex-col items-center school-info">
-            <img src="logo škola.jpg" alt="Logo školy" class="max-w-sm rounded-md mb-2">
-            <p class="text-center text-gray-700 text-sm font-semibold">Základná škola s materskou školou, Námestie Kráľovnej pokoja 4, Prešov</p>
-        </div>
-        <h1 class="text-2xl font-semibold text-blue-600 mb-8 text-center" style="color: #00B0FF;"><i><b>Výpočet stupníc a úspešnosti</b></i></h1>
-        <div class="calculator-container">
-            <div class="bg-white shadow-md rounded-lg p-6">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Kalkulačka bodovej stupnice</h2>
-                <div class="mb-4">
-                    <label for="maxPointsStupnica" class="block text-gray-700 text-sm font-bold mb-2">Maximálny počet bodov:</label>
-                    <input type="number" id="maxPointsStupnica" placeholder="Zadajte maximálny počet bodov" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                </div>
-                <div class="mb-6">
-                    <button id="calculateBtnStupnica" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" style="background-color: #00B0FF;">Vypočítajte stupnicu</button>
-                </div>
-                <div id="resultStupnica" class="hidden">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Navrhovaná bodová stupnica:</h3>
-                    <table class="min-w-full table-auto rounded-lg hidden" id="resultsTable">
-                        <thead class="bg-gray-200">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-gray-600 font-semibold uppercase">Známka</th>
-                                <th class="px-4 py-2 text-left text-gray-600 font-semibold uppercase">Percentuálny rozsah</th>
-                                <th class="px-4 py-2 text-left text-gray-600 font-semibold uppercase">Bodový rozsah</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-700">
-                            <tr>
-                                <td class="px-4 py-2">1</td>
-                                <td class="px-4 py-2">100% - 90%</td>
-                                <td class="px-4 py-2" id="range1"></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">2</td>
-                                <td class="px-4 py-2">89% - 75%</td>
-                                <td class="px-4 py-2" id="range2"></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">3</td>
-                                <td class="px-4 py-2">74% - 50%</td>
-                                <td class="px-4 py-2" id="range3"></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">4</td>
-                                <td class="px-4 py-2">49% - 25%</td>
-                                <td class="px-4 py-2" id="range4"></td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2">5</td>
-                                <td class="px-4 py-2">24% - 0%</td>
-                                <td class="px-4 py-2" id="range5"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <p id="error-message-stupnica" class="mt-4 text-red-500 text-xs italic"></p>
-                </div>
-            </div>
-            <div class="bg-white shadow-md rounded-lg p-6">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Kalkulačka úspešnosti</h2>
-                <div class="mb-4">
-                    <label for="maxPointsUspech" class="block text-gray-700 text-sm font-bold mb-2">Maximálny počet bodov:</label>
-                    <input type="number" id="maxPointsUspech" placeholder="Zadajte maximálny počet bodov" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                </div>
-                <div class="mb-4">
-                    <label for="achievedPointsUspech" class="block text-gray-700 text-sm font-bold mb-2">Dosiahnutý počet bodov:</label>
-                    <input type="number" id="achievedPointsUspech" placeholder="Zadajte dosiahnutý počet bodov" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                </div>
-                <div class="mb-6">
-                    <button id="calculateBtnUspech" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" style="background-color: #00B0FF;">Vypočítajte úspešnosť</button>
-                </div>
-                <div id="resultUspech" class="hidden">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Výsledok:</h3>
-                    <p id="percentage" class="text-lg text-green-600 font-semibold"></p>
-                    <p id="error-message-uspech" class="mt-4 text-red-500 text-xs italic"></p>
-                </div>
-            </div>
-        </div>
-        <footer class="text-center text-gray-500 text-sm mt-4">
-            &copy; 2025, PhDr. Tomáš Grančay
-        </footer>
-    </div>
-    <script>
-        // Kalkulačka bodovej stupnice
-        const maxPointsStupnicaInput = document.getElementById('maxPointsStupnica');
-        const calculateBtnStupnica = document.getElementById('calculateBtnStupnica');
-        const resultStupnicaDiv = document.getElementById('resultStupnica');
-        const resultsTable = document.getElementById('resultsTable');
-        const range1Cell = document.getElementById('range1');
-        const range2Cell = document.getElementById('range2');
-        const range3Cell = document.getElementById('range3');
-        const range4Cell = document.getElementById('range4');
-        const range5Cell = document.getElementById('range5');
-        const errorMessageStupnica = document.getElementById('error-message-stupnica');
-        calculateBtnStupnica.addEventListener('click', () => {
-            const maxPoints = parseFloat(maxPointsStupnicaInput.value);
-            if (isNaN(maxPoints) || maxPoints <= 0) {
-                errorMessageStupnica.textContent = "Prosím zadajte platný maximálny počet bodov.";
-                resultStupnicaDiv.classList.add('hidden');
-                resultsTable.classList.add('hidden');
-                return;
-            }
-            errorMessageStupnica.textContent = "";
-            resultStupnicaDiv.classList.remove('hidden');
-            resultsTable.classList.remove('hidden');
-            const gradeRanges = [
-                { minPercent: 90, maxPercent: 100, cell: range1Cell },
-                { minPercent: 75, maxPercent: 89, cell: range2Cell },
-                { minPercent: 50, maxPercent: 74, cell: range3Cell },
-                { minPercent: 25, maxPercent: 49, cell: range4Cell },
-                { minPercent: 0, maxPercent: 24, cell: range5Cell },
-            ];
-            let previousMinPoints = maxPoints; // Initialize with maxPoints
-            gradeRanges.forEach(gradeRange => {
-                const maxPointsCalculated = Math.floor(maxPoints * (gradeRange.maxPercent / 100));
-                const minPoints = gradeRange.minPercent === 0 ? 0 : Math.ceil(maxPoints * (gradeRange.minPercent / 100));
-                const displayMaxPoints = gradeRange.maxPercent === 100 ? maxPoints : previousMinPoints - 1;
-                gradeRange.cell.textContent = `${displayMaxPoints} - ${minPoints}`;
-                previousMinPoints = minPoints; // Store minPoints for the next iteration
-            });
-        });
+<body class="p-3 sm:p-5 md:p-8 flex flex-col justify-between">
 
-        // Kalkulačka úspešnosti
-        const maxPointsUspechInput = document.getElementById('maxPointsUspech');
-        const achievedPointsUspechInput = document.getElementById('achievedPointsUspech');
-        const calculateBtnUspech = document.getElementById('calculateBtnUspech');
-        const resultUspechDiv = document.getElementById('resultUspech');
-        const percentageDisplay = document.getElementById('percentage');
-        const errorMessageUspech = document.getElementById('error-message-uspech');
-        calculateBtnUspech.addEventListener('click', () => {
-            const maxPoints = parseFloat(maxPointsUspechInput.value);
-            const achievedPoints = parseFloat(achievedPointsUspechInput.value);
-            if (isNaN(maxPoints) || maxPoints <= 0 || isNaN(achievedPoints) || achievedPoints < 0) {
-                errorMessageUspech.textContent = "Prosím zadajte platné čísla pre maximálny a dosiahnutý počet bodov.";
-                resultUspechDiv.classList.add('hidden');
+    <!-- Hlavný kontajner -->
+    <div id="mainAppWrapper" class="max-w-6xl w-full mx-auto space-y-6">
+        
+        <!-- HLAVIČKA APLIKÁCIE -->
+        <header class="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-md border border-slate-200/80 dark:border-slate-700/80 flex flex-col md:flex-row items-center justify-between gap-5">
+            <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+                <div class="logo-container w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/25 shrink-0">
+                    <svg class="w-9 h-9 sm:w-11 sm:h-11 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 14v7"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">EduStupnica</h1>
+                    <p class="header-sub text-xs sm:text-sm font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase mt-0.5">Školský hodnotiaci systém</p>
+                    <p class="header-desc text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-200 mt-1">Univerzálna kalkulačka stupníc a hodnotenia žiakov</p>
+                    <p class="no-print text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
+                        Nástroj pre pedagógov na rýchly výpočet bodových hraníc písomiek, definovanie vlastných percentuálnych stupníc, okamžité hodnotenie jednotlivých žiakov a generovanie prehľadných štatistík triedy či skupiny.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Tlačidlá: Nočný režim a Tlač na desktope / tablete -->
+            <div class="no-print flex items-center gap-2 self-center sm:self-auto">
+                <button id="themeToggleBtn" type="button" title="Prepnúť nočný / denný režim" class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/80 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition shadow-sm active:scale-95 min-h-[44px]">
+                    <svg id="themeMoonIcon" class="w-4 h-4 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    <svg id="themeSunIcon" class="w-4 h-4 text-amber-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <span id="themeToggleText" class="text-xs sm:text-sm font-semibold">Tmavý režim</span>
+                </button>
+                <button id="printPageBtn" class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/80 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl font-semibold text-sm transition shadow-sm active:scale-95 min-h-[44px]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    <span>Vytlačiť tabuľku</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- LIŠTA POUŽÍVATEĽSKÝCH PROFILOV -->
+        <section class="no-print bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-2xl p-4 sm:p-5 shadow-md border border-blue-100 dark:border-slate-700/80">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                
+                <!-- Výber profilu -->
+                <div class="flex-1">
+                    <label for="profileSelect" class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        Hodnotiaca stupnica / Profil:
+                    </label>
+                    <div class="flex flex-wrap sm:flex-nowrap gap-2 items-center">
+                        <select id="profileSelect" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100 rounded-xl px-3.5 py-2.5 font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[46px]">
+                            <!-- Generované dynamicky cez JS -->
+                        </select>
+                        <button id="addProfileBtn" title="Pridať nový profil" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2.5 rounded-xl font-medium text-sm transition flex items-center gap-1.5 shrink-0 shadow-sm active:scale-95 min-h-[46px]">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            <span class="hidden sm:inline">Nový profil</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Správa profilu (Premenovať, Zmazať, Záloha) -->
+                <div class="flex flex-wrap items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-700">
+                    <button id="renameProfileBtn" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/80 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition flex items-center gap-1 min-h-[44px]">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        <span>Premenovať</span>
+                    </button>
+                    
+                    <button id="deleteProfileBtn" class="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-900/40 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition flex items-center gap-1 min-h-[44px]">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <span>Zmazať</span>
+                    </button>
+
+                    <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
+
+                    <!-- Export a Import -->
+                    <button id="exportBtn" title="Stiahnuť zálohu profilov (JSON)" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/80 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition flex items-center gap-1 min-h-[44px]">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span>Zálohovať</span>
+                    </button>
+
+                    <label class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/80 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition flex items-center gap-1 cursor-pointer min-h-[44px]">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"></path></svg>
+                        <span>Obnoviť</span>
+                        <input type="file" id="importFileInput" accept=".json" class="hidden">
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- HLAVNÝ DVOJSTĹPCOVÝ LAYOUT (RESPONZÍVNY) -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            
+            <!-- ĽAVÝ STĹPEC: STUPNICA A JEJ VÝPOČET Z TESTU (7 stĺpcov) -->
+            <div class="lg:col-span-7 flex flex-col">
+                
+                <!-- KARTA: Bodová stupnica z testu -->
+                <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-5 sm:p-7 shadow-lg border border-slate-200/80 dark:border-slate-700/80 flex-1 flex flex-col justify-between print-card">
+                    <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-slate-100 dark:border-slate-700/70 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100">Bodová stupnica z testu</h2>
+                            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Zadajte maximum bodov a tabuľka sa okamžite prepočíta.</p>
+                        </div>
+                        
+                        <!-- Prepínač úpravy stupnice -->
+                        <button id="toggleScaleEditorBtn" class="no-print self-start sm:self-auto flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-transparent dark:border-blue-800/40 px-3.5 py-2 rounded-xl transition min-h-[44px]">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <span id="toggleScaleText">Upraviť percentá</span>
+                        </button>
+                    </div>
+
+                    <!-- EDITOR PERCENTUÁLNEJ STUPNICE (Zbaliteľný) -->
+                    <div id="scaleEditorSection" class="hidden no-print mb-6 p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/70 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm sm:text-base flex items-center gap-1.5">
+                                <span>Percentuálne hranice pre známky</span>
+                            </h3>
+                            <button id="resetScaleBtn" class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 underline">
+                                Obnoviť predvolené
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Úpravy sa automaticky ukladajú do vybraného profilu.</p>
+
+                        <!-- Karty pre známky 1 až 5 -->
+                        <div class="space-y-2.5">
+                            <!-- Známka 1 -->
+                            <div class="p-3 rounded-xl grade-card-1 border flex items-center justify-between gap-2">
+                                <div class="font-bold text-sm sm:text-base flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full grade-badge-1 flex items-center justify-center text-xs font-bold">1</span>
+                                    <span>Výborný</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-1">
+                                        <label for="grade1_min" class="text-xs text-slate-600 dark:text-slate-400">Od %:</label>
+                                        <input type="number" id="grade1_min" min="1" max="100" step="1" inputmode="decimal" class="scale-input w-16 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg py-1 px-2 text-center font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <span class="text-xs text-slate-400">do 100 %</span>
+                                </div>
+                            </div>
+
+                            <!-- Známka 2 -->
+                            <div class="p-3 rounded-xl grade-card-2 border flex items-center justify-between gap-2">
+                                <div class="font-bold text-sm sm:text-base flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full grade-badge-2 flex items-center justify-center text-xs font-bold">2</span>
+                                    <span>Chválitebný</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-1">
+                                        <label for="grade2_min" class="text-xs text-slate-600 dark:text-slate-400">Od %:</label>
+                                        <input type="number" id="grade2_min" min="1" max="99" step="1" inputmode="decimal" class="scale-input w-16 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg py-1 px-2 text-center font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <label for="grade2_max" class="text-xs text-slate-600 dark:text-slate-400">Do %:</label>
+                                        <input type="number" id="grade2_max" min="1" max="99" step="1" inputmode="decimal" class="scale-input w-16 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg py-1 px-2 text-center font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Známka 3 -->
+                            <div class="p-3 rounded-xl grade-card-3 border flex items-center justify-between gap-2">
+                                <div class="font-bold text-sm sm:text-base flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full grade-badge-3 flex items-center justify-center text-xs font-bold">3</span>
+                                    <span>Dobrý</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-1">
+                                        <label for="grade3_min" class="text-xs text-slate-600 dark:text-slate-400">Od %:</label>
+                                        <input type="number" id="grade3_min" min="1" max="99" step="1" inputmode="decimal" class="scale-input w-16 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg py-1 px-2 text-center font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <label for="grade3_max" class="text-xs text-slate-600 dark:text-slate-400">Do %:</label>
+                                        <input type="number" id="grade3_max" min="1" max="99" step="1" inputmode="decimal" class="scale-input w-16 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg py-1 px-2 text-center font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Známka 4 -->
+                            <div class="p-3 rounded-xl grade-card-4 border flex items-center justify-between gap-2">
+                                <div class="font-bold text-sm sm:text-base flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full grade-badge-4 flex items-center justify-center text-xs font-bold">4</span>
+                                    <span>Dostatočný</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-1">
+                                        <label for="grade4_min" class="text-xs text-slate-600 dark:text-slate-400">Od %:</label>
+                                        <input type="number" id="grade4_min" min="1" max="99" step="1" inputmode="decimal" class="scale-input w-16 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg py-1 px-2 text-center font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <label for="grade4_max" class="text-xs text-slate-600 dark:text-slate-400">Do %:</label>
+                                        <input type="number" id="grade4_max" min="1" max="99" step="1" inputmode="decimal" class="scale-input w-16 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg py-1 px-2 text-center font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Známka 5 -->
+                            <div class="p-3 rounded-xl grade-card-5 border flex items-center justify-between gap-2">
+                                <div class="font-bold text-sm sm:text-base flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full grade-badge-5 flex items-center justify-center text-xs font-bold">5</span>
+                                    <span>Nedostatočný</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-slate-400">od 0 %</span>
+                                    <div class="flex items-center gap-1">
+                                        <label for="grade5_max" class="text-xs text-slate-600 dark:text-slate-400">Do %:</label>
+                                        <input type="number" id="grade5_max" min="0" max="99" step="1" inputmode="decimal" class="scale-input w-16 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg py-1 px-2 text-center font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stav uloženia a chyby validácie -->
+                        <div class="mt-3 text-center min-h-[22px]">
+                            <p id="scaleStatusMsg" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hidden">✓ Uložené automaticky do profilu</p>
+                            <p id="scaleErrorMsg" class="text-xs font-semibold text-rose-600 dark:text-rose-400 hidden"></p>
+                        </div>
+                    </div>
+
+                    <!-- VSTUP PRE MAXIMÁLNY POČET BODOV -->
+                    <div class="no-print mb-6">
+                        <label for="maxPointsInput" class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                            Maximálny počet bodov z testu:
+                        </label>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="relative flex-1">
+                                <input type="number" id="maxPointsInput" min="1" max="1000" step="any" inputmode="decimal" value="30" placeholder="Napr. 30 alebo 45.5" class="w-full bg-slate-50 dark:bg-slate-900 border-2 border-blue-200 dark:border-blue-600 focus:border-blue-600 rounded-xl px-4 py-3 text-lg font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900/40 min-h-[48px]">
+                                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">bodov</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 self-center">
+                                <button type="button" class="quick-point-btn bg-slate-100 dark:bg-slate-700/80 hover:bg-blue-50 dark:hover:bg-blue-950/60 hover:text-blue-600 dark:hover:text-blue-300 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 min-h-[44px]" data-val="10">10 b</button>
+                                <button type="button" class="quick-point-btn bg-slate-100 dark:bg-slate-700/80 hover:bg-blue-50 dark:hover:bg-blue-950/60 hover:text-blue-600 dark:hover:text-blue-300 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 min-h-[44px]" data-val="20">20 b</button>
+                                <button type="button" class="quick-point-btn bg-slate-100 dark:bg-slate-700/80 hover:bg-blue-50 dark:hover:bg-blue-950/60 hover:text-blue-600 dark:hover:text-blue-300 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 min-h-[44px]" data-val="30">30 b</button>
+                                <button type="button" class="quick-point-btn bg-slate-100 dark:bg-slate-700/80 hover:bg-blue-50 dark:hover:bg-blue-950/60 hover:text-blue-600 dark:hover:text-blue-300 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 min-h-[44px]" data-val="50">50 b</button>
+                                <button type="button" class="quick-point-btn bg-slate-100 dark:bg-slate-700/80 hover:bg-blue-50 dark:hover:bg-blue-950/60 hover:text-blue-600 dark:hover:text-blue-300 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 min-h-[44px]" data-val="100">100 b</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MOŽNOSTI TLAČE (NÁZOV A DOPLNKOVÝ TEXT) -->
+                    <div class="no-print mb-5 p-3.5 sm:p-4 bg-slate-50 dark:bg-slate-900/70 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                Údaje pre tlačovú zostavu:
+                            </span>
+                            <span class="text-[11px] text-slate-400">Zobrazí sa v hlavičke pri tlači</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <label for="printDocTitleInput" class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Názov stupnice / písomky:</label>
+                                <input type="text" id="printDocTitleInput" value="Bodová hodnotiaca stupnica" placeholder="Napr. Polročný test z matematiky" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 min-h-[38px]">
+                            </div>
+                            <div>
+                                <label for="printDocCustomTextInput" class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Doplnkový text (trieda, dátum, učiteľ):</label>
+                                <input type="text" id="printDocCustomTextInput" placeholder="Napr. Trieda: 7.A | Dátum: 20. 9. 2026 | Vyučujúci: ..." class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 min-h-[38px]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PRINT HLAVIČKA (zobrazuje sa iba pri tlači) -->
+                    <div class="print-only mb-5 pb-3 border-b-2 border-slate-300">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <h2 id="printDocTitleDisplay" class="text-xl font-bold text-slate-900 leading-tight">Bodová hodnotiaca stupnica</h2>
+                                <p id="printDocCustomTextDisplay" class="text-xs text-slate-700 font-medium mt-1"></p>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="text-xs text-slate-500 uppercase font-bold block">Maximálny počet bodov</span>
+                                <span class="text-xl font-black text-slate-900"><span id="printMaxPoints">30</span> b</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VÝSLEDNÁ TABUĽKA BODOVEJ STUPNICE -->
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 text-xs sm:text-sm uppercase tracking-wider">
+                                    <th class="py-3 px-3 sm:px-4 font-bold border-b border-slate-200 dark:border-slate-700">Známka</th>
+                                    <th class="py-3 px-3 sm:px-4 font-bold border-b border-slate-200 dark:border-slate-700">Bodový rozsah</th>
+                                    <th class="py-3 px-3 sm:px-4 font-bold border-b border-slate-200 dark:border-slate-700">Percentá</th>
+                                    <th class="py-3 px-3 sm:px-4 font-bold border-b border-slate-200 dark:border-slate-700 hidden sm:table-cell">Slovné hodnotenie</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gradeScaleTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/60 text-sm sm:text-base font-medium">
+                                <!-- Generované dynamicky -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Kopírovanie / Tlač pre mobil -->
+                    <div class="no-print mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+                        <span id="roundingInfo">Zaokrúhľovanie: štandardné celočíselné hranice</span>
+                        <div class="flex items-center gap-2">
+                            <button id="copyTableBtn" class="hover:text-blue-600 dark:hover:text-blue-400 font-semibold flex items-center gap-1 py-1.5 px-2.5 rounded-lg bg-slate-50 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 active:scale-95 min-h-[38px]">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                <span id="copyTableText">Kopírovať tabuľku</span>
+                            </button>
+                            <button onclick="window.print()" class="sm:hidden text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 py-1.5 px-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 active:scale-95 min-h-[38px]">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                <span>Tlač</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- PRAVÝ STĹPEC: KALKULAČKA ŽIAKA A HROMADNÉ HODNOTENIE (5 stĺpcov) -->
+            <div class="lg:col-span-5 flex flex-col gap-6 no-print">
+                
+                <!-- KARTA: Rýchla kalkulačka pre žiaka -->
+                <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-5 sm:p-7 shadow-lg border border-slate-200/80 dark:border-slate-700/80 shrink-0">
+                    <h2 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-1">Kalkulačka výsledkov žiaka</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-5">Zadajte získané body a ihneď uvidíte percento a známku.</p>
+
+                    <div class="space-y-4">
+                        <!-- Max bodov (zrkadlí hodnotu z testu) -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label for="studentMaxPointsInput" class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                                    Maximum testu:
+                                </label>
+                                <span class="text-xs text-blue-600 dark:text-blue-400 font-medium">prepojené s testom</span>
+                            </div>
+                            <input type="number" id="studentMaxPointsInput" min="1" step="any" inputmode="decimal" value="30" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-3.5 py-2.5 font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 min-h-[46px]">
+                        </div>
+
+                        <!-- Dosiahnuté body žiaka -->
+                        <div>
+                            <label for="studentAchievedPointsInput" class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                                Získané body žiaka:
+                            </label>
+                            <input type="number" id="studentAchievedPointsInput" min="0" step="any" inputmode="decimal" placeholder="Napr. 26.5" class="w-full bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-500 focus:border-indigo-600 rounded-xl px-4 py-3 text-xl font-extrabold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900/40 min-h-[48px]">
+                        </div>
+
+                        <!-- Chybová hláška pre žiaka -->
+                        <p id="studentCalcErrorMsg" class="text-xs font-semibold text-rose-600 dark:text-rose-400 hidden"></p>
+
+                        <!-- Výsledná vizitka -->
+                        <div id="studentResultCard" class="p-5 rounded-2xl border transition-all duration-300 bg-slate-50 dark:bg-slate-900/70 border-slate-200 dark:border-slate-700 text-center">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Výsledné hodnotenie</p>
+                            
+                            <div class="flex items-center justify-center gap-6 my-2">
+                                <div>
+                                    <span class="text-xs text-slate-500 dark:text-slate-400 block">Úspešnosť</span>
+                                    <span id="studentPercentageText" class="text-3xl font-black text-slate-800 dark:text-slate-100">-- %</span>
+                                </div>
+                                <div class="w-px h-10 bg-slate-200 dark:bg-slate-700"></div>
+                                <div>
+                                    <span class="text-xs text-slate-500 dark:text-slate-400 block">Známka</span>
+                                    <div id="studentGradeBadge" class="inline-flex items-center justify-center w-12 h-12 rounded-2xl text-2xl font-black bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm mt-0.5">
+                                        -
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <p id="studentGradeDesc" class="text-sm font-bold text-slate-600 dark:text-slate-300 mt-1">Zadajte body žiaka vyššie</p>
+                            <p id="pointsToNextGradeMsg" class="text-xs text-slate-400 dark:text-slate-500 mt-1"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KARTA: Hromadné štatistiky celej triedy / skupiny -->
+                <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-5 sm:p-7 shadow-lg border border-slate-200/80 dark:border-slate-700/80 flex-1 flex flex-col justify-between">
+                    <div class="flex flex-col flex-1">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Štatistika triedy / skupiny</h3>
+                            <span class="text-xs bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold px-2 py-0.5 rounded-full">Rýchly prehľad</span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Zadajte body jednotlivých žiakov oddelené čiarkou alebo medzerou. Systém okamžite spočíta priemer známok, úspešnosť a rozdelenie známok.</p>
+                        
+                        <textarea id="classPointsInput" rows="3" placeholder="Napr. 28, 25.5, 19, 30, 14.5, 22..." class="w-full flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl p-3 text-sm font-mono focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 min-h-[90px] sm:min-h-[110px] resize-y"></textarea>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div id="classStatsResult" class="grid grid-cols-3 gap-2 text-center hidden">
+                            <div class="bg-slate-50 dark:bg-slate-900/70 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700/60">
+                                <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 uppercase font-bold block">Počet</span>
+                                <span id="classCountText" class="text-base sm:text-lg font-extrabold text-slate-800 dark:text-slate-100">0</span>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-900/70 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700/60">
+                                <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 uppercase font-bold block">Priem. známka</span>
+                                <span id="classAvgGradeText" class="text-base sm:text-lg font-extrabold text-blue-600 dark:text-blue-400">0.0</span>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-900/70 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700/60">
+                                <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 uppercase font-bold block">Úspešnosť</span>
+                                <span id="classAvgPctText" class="text-base sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400">0 %</span>
+                            </div>
+                        </div>
+
+                        <!-- Rozpis známok celej triedy -->
+                        <div id="classGradeCounts" class="mt-3 flex justify-between gap-1 text-center hidden">
+                            <div class="flex-1 grade-card-1 border rounded-lg py-1"><span class="text-xs font-bold block">1</span><span id="countGrade1" class="text-xs font-extrabold">0x</span></div>
+                            <div class="flex-1 grade-card-2 border rounded-lg py-1"><span class="text-xs font-bold block">2</span><span id="countGrade2" class="text-xs font-extrabold">0x</span></div>
+                            <div class="flex-1 grade-card-3 border rounded-lg py-1"><span class="text-xs font-bold block">3</span><span id="countGrade3" class="text-xs font-extrabold">0x</span></div>
+                            <div class="flex-1 grade-card-4 border rounded-lg py-1"><span class="text-xs font-bold block">4</span><span id="countGrade4" class="text-xs font-extrabold">0x</span></div>
+                            <div class="flex-1 grade-card-5 border rounded-lg py-1"><span class="text-xs font-bold block">5</span><span id="countGrade5" class="text-xs font-extrabold">0x</span></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- PÄTA STRÁNKY -->
+        <footer class="no-print pt-6 pb-2 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
+            <p class="font-medium">&copy; 2025 – 2026, PhDr. Tomáš Grančay • EduStupnica</p>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500">Dáta sú bezpečne uložené iba vo Vašom prehliadači.</p>
+        </footer>
+
+    </div>
+
+    <!-- JAVASCRIPT APLIKÁCIE -->
+    <script>
+        // ==========================================
+        // DÁTOVÝ MODEL A PREDVOLENÉ NASTAVENIA
+        // ==========================================
+        const STORAGE_KEY = 'skola_kalkulacka_profily_v3';
+
+        const DEFAULT_SCALE_MSVVAS = {
+            1: { min: 90, max: 100 },
+            2: { min: 75, max: 89 },
+            3: { min: 50, max: 74 },
+            4: { min: 30, max: 49 },
+            5: { min: 0, max: 29 }
+        };
+
+        const INITIAL_STATE = {
+            activeProfileId: 'default',
+            profiles: {
+                'default': {
+                    name: 'Štandardná stupnica',
+                    scale: JSON.parse(JSON.stringify(DEFAULT_SCALE_MSVVAS))
+                },
+                'gymnazium': {
+                    name: 'Prísnejšia stupnica (Gymnázium / Olympiády)',
+                    scale: {
+                        1: { min: 92, max: 100 },
+                        2: { min: 83, max: 91 },
+                        3: { min: 70, max: 82 },
+                        4: { min: 50, max: 69 },
+                        5: { min: 0, max: 49 }
+                    }
+                }
+            }
+        };
+
+        let appData = loadAppData();
+        let saveTimeout = null;
+
+        // Načítanie dát z localStorage s fallbackom
+        function loadAppData() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (parsed && parsed.profiles && parsed.activeProfileId) {
+                        // Automatická úprava názvu pre staršie uložené dáta
+                        if (parsed.profiles['default'] && parsed.profiles['default'].name && parsed.profiles['default'].name.includes('MŠVVaŠ')) {
+                            parsed.profiles['default'].name = 'Štandardná stupnica';
+                        }
+                        return parsed;
+                    }
+                }
+            } catch (e) {
+                console.warn("Nepodarilo sa načítať localStorage, používam predvolené dáta:", e);
+            }
+            return JSON.parse(JSON.stringify(INITIAL_STATE));
+        }
+
+        // Uloženie dát do localStorage
+        function persistAppData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+            } catch (e) {
+                console.error("Chyba pri ukladaní do localStorage:", e);
+            }
+        }
+
+        function getActiveProfile() {
+            if (!appData.profiles[appData.activeProfileId]) {
+                appData.activeProfileId = Object.keys(appData.profiles)[0] || 'default';
+            }
+            return appData.profiles[appData.activeProfileId];
+        }
+
+        // ==========================================
+        // PRVKY DOM
+        // ==========================================
+        const profileSelect = document.getElementById('profileSelect');
+        const addProfileBtn = document.getElementById('addProfileBtn');
+        const renameProfileBtn = document.getElementById('renameProfileBtn');
+        const deleteProfileBtn = document.getElementById('deleteProfileBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const importFileInput = document.getElementById('importFileInput');
+
+        const toggleScaleEditorBtn = document.getElementById('toggleScaleEditorBtn');
+        const toggleScaleText = document.getElementById('toggleScaleText');
+        const scaleEditorSection = document.getElementById('scaleEditorSection');
+        const resetScaleBtn = document.getElementById('resetScaleBtn');
+        const scaleStatusMsg = document.getElementById('scaleStatusMsg');
+        const scaleErrorMsg = document.getElementById('scaleErrorMsg');
+
+        const maxPointsInput = document.getElementById('maxPointsInput');
+        const gradeScaleTableBody = document.getElementById('gradeScaleTableBody');
+        const printMaxPoints = document.getElementById('printMaxPoints');
+        const printDocTitleInput = document.getElementById('printDocTitleInput');
+        const printDocCustomTextInput = document.getElementById('printDocCustomTextInput');
+        const printDocTitleDisplay = document.getElementById('printDocTitleDisplay');
+        const printDocCustomTextDisplay = document.getElementById('printDocCustomTextDisplay');
+        const printPageBtn = document.getElementById('printPageBtn');
+        const copyTableBtn = document.getElementById('copyTableBtn');
+        const copyTableText = document.getElementById('copyTableText');
+
+        const studentMaxPointsInput = document.getElementById('studentMaxPointsInput');
+        const studentAchievedPointsInput = document.getElementById('studentAchievedPointsInput');
+        const studentResultCard = document.getElementById('studentResultCard');
+        const studentPercentageText = document.getElementById('studentPercentageText');
+        const studentGradeBadge = document.getElementById('studentGradeBadge');
+        const studentGradeDesc = document.getElementById('studentGradeDesc');
+        const studentCalcErrorMsg = document.getElementById('studentCalcErrorMsg');
+        const pointsToNextGradeMsg = document.getElementById('pointsToNextGradeMsg');
+
+        const classPointsInput = document.getElementById('classPointsInput');
+        const classStatsResult = document.getElementById('classStatsResult');
+        const classGradeCounts = document.getElementById('classGradeCounts');
+        const classCountText = document.getElementById('classCountText');
+        const classAvgGradeText = document.getElementById('classAvgGradeText');
+        const classAvgPctText = document.getElementById('classAvgPctText');
+
+        // ==========================================
+        // SPRÁVA TÉMY (SVETLÝ / TMAVÝ REŽIM)
+        // ==========================================
+        const THEME_STORAGE_KEY = 'edustupnica_theme';
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+            const isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            applyTheme(isDark);
+
+            const themeToggleBtn = document.getElementById('themeToggleBtn');
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', toggleTheme);
+            }
+
+            // Reakcia na zmenu systémových preferencií OS
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem(THEME_STORAGE_KEY)) {
+                    applyTheme(e.matches);
+                }
+            });
+        }
+
+        function toggleTheme() {
+            const isCurrentlyDark = document.documentElement.classList.contains('dark');
+            const newIsDark = !isCurrentlyDark;
+            localStorage.setItem(THEME_STORAGE_KEY, newIsDark ? 'dark' : 'light');
+            applyTheme(newIsDark);
+        }
+
+        function applyTheme(isDark) {
+            const moonIcon = document.getElementById('themeMoonIcon');
+            const sunIcon = document.getElementById('themeSunIcon');
+            const themeText = document.getElementById('themeToggleText');
+
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                if (moonIcon) moonIcon.classList.add('hidden');
+                if (sunIcon) sunIcon.classList.remove('hidden');
+                if (themeText) themeText.textContent = 'Svetlý režim';
+            } else {
+                document.documentElement.classList.remove('dark');
+                if (moonIcon) moonIcon.classList.remove('hidden');
+                if (sunIcon) sunIcon.classList.add('hidden');
+                if (themeText) themeText.textContent = 'Tmavý režim';
+            }
+        }
+
+        // ==========================================
+        // INICIALIZÁCIA A PROFILOVÝ SYSTÉM
+        // ==========================================
+        function initApp() {
+            initTheme();
+            renderProfileSelect();
+            loadActiveProfileIntoEditor();
+            calculateGradeScaleTable();
+            calculateStudentGrade();
+            setupEventListeners();
+        }
+
+        function renderProfileSelect() {
+            profileSelect.innerHTML = '';
+            for (const [id, profile] of Object.entries(appData.profiles)) {
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = profile.name;
+                if (id === appData.activeProfileId) {
+                    opt.selected = true;
+                }
+                profileSelect.appendChild(opt);
+            }
+        }
+
+        function loadActiveProfileIntoEditor() {
+            const profile = getActiveProfile();
+            const scale = profile.scale;
+
+            document.getElementById('grade1_min').value = scale[1].min;
+            document.getElementById('grade2_max').value = scale[2].max;
+            document.getElementById('grade2_min').value = scale[2].min;
+            document.getElementById('grade3_max').value = scale[3].max;
+            document.getElementById('grade3_min').value = scale[3].min;
+            document.getElementById('grade4_max').value = scale[4].max;
+            document.getElementById('grade4_min').value = scale[4].min;
+            document.getElementById('grade5_max').value = scale[5].max;
+        }
+
+        // ==========================================
+        // VÝPOČET BODOVEJ STUPNICE Z TESTU
+        // ==========================================
+        function calculateGradeScaleTable() {
+            const maxPts = parseFloat(maxPointsInput.value);
+            printMaxPoints.textContent = isNaN(maxPts) ? '0' : maxPts;
+
+            if (isNaN(maxPts) || maxPts <= 0) {
+                gradeScaleTableBody.innerHTML = `
+                    <tr><td colspan="4" class="text-center py-4 text-rose-600 font-semibold">
+                        Zadajte platný maximálny počet bodov (väčší ako 0).
+                    </td></tr>
+                `;
                 return;
             }
-            if (achievedPoints > maxPoints) {
-                errorMessageUspech.textContent = "Dosiahnutý počet bodov nemôže byť väčší ako maximálny počet bodov.";
-                resultUspechDiv.classList.add('hidden');
+
+            const profile = getActiveProfile();
+            const scale = profile.scale;
+            gradeScaleTableBody.innerHTML = '';
+
+            const gradeNames = {
+                1: "Výborný",
+                2: "Chválitebný",
+                3: "Dobrý",
+                4: "Dostatočný",
+                5: "Nedostatočný"
+            };
+
+            const gradeCardClasses = {
+                1: "grade-card-1",
+                2: "grade-card-2",
+                3: "grade-card-3",
+                4: "grade-card-4",
+                5: "grade-card-5"
+            };
+
+            const gradeBadgeClasses = {
+                1: "grade-badge-1",
+                2: "grade-badge-2",
+                3: "grade-badge-3",
+                4: "grade-badge-4",
+                5: "grade-badge-5"
+            };
+
+            // Výpočet bodových prahov
+            // Prah pre danú známku: Math.ceil(maxPts * min% / 100)
+            const thresholds = {};
+            thresholds[1] = Math.ceil(maxPts * (scale[1].min / 100));
+            thresholds[2] = Math.ceil(maxPts * (scale[2].min / 100));
+            thresholds[3] = Math.ceil(maxPts * (scale[3].min / 100));
+            thresholds[4] = Math.ceil(maxPts * (scale[4].min / 100));
+            thresholds[5] = 0;
+
+            [1, 2, 3, 4, 5].forEach(grade => {
+                let rangeMin, rangeMax;
+
+                if (grade === 1) {
+                    rangeMin = thresholds[1];
+                    rangeMax = maxPts;
+                } else if (grade === 5) {
+                    rangeMin = 0;
+                    rangeMax = Math.max(0, thresholds[4] - 1);
+                } else {
+                    rangeMin = thresholds[grade];
+                    rangeMax = Math.max(rangeMin, thresholds[grade - 1] - 1);
+                }
+
+                // Bodový rozsah text
+                let pointsText = "";
+                if (rangeMin === rangeMax) {
+                    pointsText = `${rangeMin} b`;
+                } else if (rangeMax < rangeMin) {
+                    pointsText = `${rangeMin} b`;
+                } else {
+                    pointsText = `${rangeMax} – ${rangeMin} b`;
+                }
+
+                const pctText = `${scale[grade].max} % – ${scale[grade].min} %`;
+
+                const tr = document.createElement('tr');
+                tr.className = `${gradeCardClasses[grade]} border-b border-slate-100/60 dark:border-slate-800/60 transition hover:brightness-95`;
+                tr.innerHTML = `
+                    <td class="py-2.5 sm:py-3 px-3 sm:px-4 font-bold">
+                        <span class="inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-xl ${gradeBadgeClasses[grade]} font-extrabold text-xs sm:text-sm shadow-sm">
+                            ${grade}
+                        </span>
+                    </td>
+                    <td class="py-2.5 sm:py-3 px-3 sm:px-4 font-extrabold text-slate-800 dark:text-slate-100 text-sm sm:text-base">
+                        ${pointsText}
+                    </td>
+                    <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-semibold">
+                        ${pctText}
+                    </td>
+                    <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hidden sm:table-cell">
+                        ${gradeNames[grade]}
+                    </td>
+                `;
+                gradeScaleTableBody.appendChild(tr);
+            });
+        }
+
+        // ==========================================
+        // VÝPOČET ZNÁMKY A ÚSPEŠNOSTI ŽIAKA
+        // ==========================================
+        function calculateStudentGrade() {
+            const maxPts = parseFloat(studentMaxPointsInput.value);
+            const achievedRaw = studentAchievedPointsInput.value.trim();
+            const achievedPts = parseFloat(achievedRaw);
+
+            studentCalcErrorMsg.classList.add('hidden');
+            pointsToNextGradeMsg.textContent = '';
+
+            if (achievedRaw === '' || isNaN(achievedPts)) {
+                studentPercentageText.textContent = '-- %';
+                studentGradeBadge.textContent = '-';
+                studentGradeBadge.className = 'inline-flex items-center justify-center w-12 h-12 rounded-2xl text-2xl font-black bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm mt-0.5';
+                studentGradeDesc.textContent = 'Zadajte body žiaka vyššie';
+                studentResultCard.className = 'p-5 rounded-2xl border transition-all duration-300 bg-slate-50 dark:bg-slate-900/70 border-slate-200 dark:border-slate-700 text-center';
                 return;
             }
-            errorMessageUspech.textContent = "";
-            resultUspechDiv.classList.remove('hidden');
-            const percentage = (achievedPoints / maxPoints) * 100;
-            percentageDisplay.textContent = `Úspešnosť: ${percentage.toFixed(2)}%`;
-        });
+
+            if (isNaN(maxPts) || maxPts <= 0) {
+                studentCalcErrorMsg.textContent = 'Zadajte platné maximum bodov testu.';
+                studentCalcErrorMsg.classList.remove('hidden');
+                return;
+            }
+
+            if (achievedPts < 0) {
+                studentCalcErrorMsg.textContent = 'Získané body nemôžu byť záporné.';
+                studentCalcErrorMsg.classList.remove('hidden');
+                return;
+            }
+
+            if (achievedPts > maxPts) {
+                studentCalcErrorMsg.textContent = `Získané body (${achievedPts}) prevyšujú maximum (${maxPts}).`;
+                studentCalcErrorMsg.classList.remove('hidden');
+            }
+
+            const pct = (achievedPts / maxPts) * 100;
+            studentPercentageText.textContent = `${pct.toFixed(1)} %`;
+
+            const profile = getActiveProfile();
+            const scale = profile.scale;
+
+            let finalGrade = 5;
+            for (let g = 1; g <= 5; g++) {
+                if (pct >= scale[g].min && pct <= scale[g].max) {
+                    finalGrade = g;
+                    break;
+                }
+            }
+            if (pct > 100) finalGrade = 1;
+
+            const gradeBadgeClasses = {
+                1: "grade-badge-1",
+                2: "grade-badge-2",
+                3: "grade-badge-3",
+                4: "grade-badge-4",
+                5: "grade-badge-5"
+            };
+
+            const gradeCardClasses = {
+                1: "grade-card-1 border-emerald-300 dark:border-emerald-500/50",
+                2: "grade-card-2 border-teal-300 dark:border-teal-500/50",
+                3: "grade-card-3 border-amber-300 dark:border-amber-500/50",
+                4: "grade-card-4 border-orange-300 dark:border-orange-500/50",
+                5: "grade-card-5 border-rose-300 dark:border-rose-500/50"
+            };
+
+            const gradeNames = {
+                1: "Známka 1 – Výborný",
+                2: "Známka 2 – Chválitebný",
+                3: "Známka 3 – Dobrý",
+                4: "Známka 4 – Dostatočný",
+                5: "Známka 5 – Nedostatočný"
+            };
+
+            studentGradeBadge.textContent = finalGrade;
+            studentGradeBadge.className = `inline-flex items-center justify-center w-12 h-12 rounded-2xl text-2xl font-black ${gradeBadgeClasses[finalGrade]} shadow-md mt-0.5 animate-fade-in`;
+            studentGradeDesc.textContent = gradeNames[finalGrade];
+            studentResultCard.className = `p-5 rounded-2xl border-2 transition-all duration-300 ${gradeCardClasses[finalGrade]} text-center shadow-sm`;
+
+            // Koľko bodov chýbalo k lepšej známke?
+            if (finalGrade > 1) {
+                const targetGrade = finalGrade - 1;
+                const targetMinPct = scale[targetGrade].min;
+                const neededPoints = (targetMinPct / 100) * maxPts;
+                const diff = (neededPoints - achievedPts).toFixed(1);
+                if (diff > 0) {
+                    pointsToNextGradeMsg.textContent = `K známke ${targetGrade} chýba: ${diff} b.`;
+                }
+            } else {
+                pointsToNextGradeMsg.textContent = 'Dosiahnutý výborný výsledok!';
+            }
+        }
+
+        // ==========================================
+        // VALIDÁCIA A UKLADANIE STUPNICE (AUTOSAVE)
+        // ==========================================
+        function triggerAutoSave() {
+            clearTimeout(saveTimeout);
+            scaleErrorMsg.classList.add('hidden');
+            scaleStatusMsg.classList.add('hidden');
+            saveTimeout = setTimeout(validateAndSaveScale, 400);
+        }
+
+        function validateAndSaveScale() {
+            const temp = {};
+            for (let g = 1; g <= 5; g++) {
+                if (g === 1) {
+                    temp[1] = {
+                        min: parseFloat(document.getElementById('grade1_min').value) || 0,
+                        max: 100
+                    };
+                } else if (g === 5) {
+                    temp[5] = {
+                        min: 0,
+                        max: parseFloat(document.getElementById('grade5_max').value) || 0
+                    };
+                } else {
+                    temp[g] = {
+                        min: parseFloat(document.getElementById(`grade${g}_min`).value) || 0,
+                        max: parseFloat(document.getElementById(`grade${g}_max`).value) || 0
+                    };
+                }
+            }
+
+            // Validácia čísel
+            for (let g = 1; g <= 5; g++) {
+                if (temp[g].min < 0 || temp[g].max > 100) {
+                    showScaleError(`Hodnoty musia byť v rozsahu 0 až 100 %.`);
+                    return;
+                }
+                if (temp[g].min > temp[g].max) {
+                    showScaleError(`Pri známke ${g} je minimum vyššie ako maximum.`);
+                    return;
+                }
+            }
+
+            // Validácia nadväznosti (žiadne prekryvy ani diery)
+            for (let g = 1; g < 5; g++) {
+                if (temp[g].min <= temp[g+1].max) {
+                    showScaleError(`Rozsah známky ${g} sa prekrýva so známkou ${g+1} (${temp[g].min}% vs ${temp[g+1].max}%).`);
+                    return;
+                }
+                if (temp[g].min - temp[g+1].max > 1) {
+                    showScaleError(`Medzi známkou ${g} a ${g+1} je diera (${temp[g].min}% a ${temp[g+1].max}%).`);
+                    return;
+                }
+            }
+
+            // Všetko v poriadku - uložíme do profilu
+            const profile = getActiveProfile();
+            profile.scale = temp;
+            persistAppData();
+
+            scaleStatusMsg.textContent = `✓ Uložené automaticky do profilu: ${profile.name}`;
+            scaleStatusMsg.classList.remove('hidden');
+            setTimeout(() => scaleStatusMsg.classList.add('hidden'), 3500);
+
+            calculateGradeScaleTable();
+            calculateStudentGrade();
+            calculateClassStats();
+        }
+
+        function showScaleError(msg) {
+            scaleErrorMsg.textContent = `Chyba: ${msg}`;
+            scaleErrorMsg.classList.remove('hidden');
+            scaleStatusMsg.classList.add('hidden');
+        }
+
+        // ==========================================
+        // ŠTATISTIKA CELEJ TRIEDY
+        // ==========================================
+        function calculateClassStats() {
+            const raw = classPointsInput.value.trim();
+            if (!raw) {
+                classStatsResult.classList.add('hidden');
+                classGradeCounts.classList.add('hidden');
+                return;
+            }
+
+            const maxPts = parseFloat(maxPointsInput.value) || 30;
+            // Rozdelenie podľa čiarky, medzery, bodkočiarky alebo nového riadku
+            const numbers = raw.split(/[\s,;]+/)
+                               .map(s => parseFloat(s.replace(',', '.')))
+                               .filter(n => !isNaN(n) && n >= 0);
+
+            if (numbers.length === 0) {
+                classStatsResult.classList.add('hidden');
+                classGradeCounts.classList.add('hidden');
+                return;
+            }
+
+            const profile = getActiveProfile();
+            const scale = profile.scale;
+            const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            let totalGradeSum = 0;
+            let totalPctSum = 0;
+
+            numbers.forEach(pts => {
+                const pct = (pts / maxPts) * 100;
+                totalPctSum += pct;
+
+                let g = 5;
+                for (let i = 1; i <= 5; i++) {
+                    if (pct >= scale[i].min && pct <= scale[i].max) {
+                        g = i;
+                        break;
+                    }
+                }
+                if (pct > 100) g = 1;
+
+                counts[g]++;
+                totalGradeSum += g;
+            });
+
+            classCountText.textContent = numbers.length;
+            classAvgGradeText.textContent = (totalGradeSum / numbers.length).toFixed(2);
+            classAvgPctText.textContent = `${(totalPctSum / numbers.length).toFixed(1)} %`;
+
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById(`countGrade${i}`).textContent = `${counts[i]}x`;
+            }
+
+            classStatsResult.classList.remove('hidden');
+            classGradeCounts.classList.remove('hidden');
+        }
+
+        // ==========================================
+        // EVENT LISTENERY
+        // ==========================================
+        function setupEventListeners() {
+            // Zmena profilu
+            profileSelect.addEventListener('change', (e) => {
+                appData.activeProfileId = e.target.value;
+                persistAppData();
+                loadActiveProfileIntoEditor();
+                calculateGradeScaleTable();
+                calculateStudentGrade();
+                calculateClassStats();
+            });
+
+            // Vlastné nastavenia tlače
+            printDocTitleInput.addEventListener('input', () => {
+                printDocTitleDisplay.textContent = printDocTitleInput.value.trim() || 'Bodová hodnotiaca stupnica';
+            });
+            printDocCustomTextInput.addEventListener('input', () => {
+                printDocCustomTextDisplay.textContent = printDocCustomTextInput.value.trim();
+            });
+
+            // Pridať nový profil
+            addProfileBtn.addEventListener('click', () => {
+                const name = prompt("Zadajte názov nového profilu (napr. meno učiteľa alebo predmet):");
+                if (name && name.trim()) {
+                    const id = 'prof_' + Date.now();
+                    const activeScale = getActiveProfile().scale;
+                    appData.profiles[id] = {
+                        name: name.trim(),
+                        scale: JSON.parse(JSON.stringify(activeScale))
+                    };
+                    appData.activeProfileId = id;
+                    persistAppData();
+                    renderProfileSelect();
+                    loadActiveProfileIntoEditor();
+                    calculateGradeScaleTable();
+                    calculateStudentGrade();
+                    calculateClassStats();
+                }
+            });
+
+            // Premenovať profil
+            renameProfileBtn.addEventListener('click', () => {
+                const current = getActiveProfile();
+                const newName = prompt("Zadajte nový názov pre tento profil:", current.name);
+                if (newName && newName.trim()) {
+                    current.name = newName.trim();
+                    persistAppData();
+                    renderProfileSelect();
+                }
+            });
+
+            // Zmazať profil
+            deleteProfileBtn.addEventListener('click', () => {
+                const keys = Object.keys(appData.profiles);
+                if (keys.length <= 1) {
+                    alert("Nemôžete zmazať jediný zostávajúci profil.");
+                    return;
+                }
+                const current = getActiveProfile();
+                if (confirm(`Naozaj chcete zmazať profil "${current.name}"?`)) {
+                    delete appData.profiles[appData.activeProfileId];
+                    appData.activeProfileId = Object.keys(appData.profiles)[0];
+                    persistAppData();
+                    renderProfileSelect();
+                    loadActiveProfileIntoEditor();
+                    calculateGradeScaleTable();
+                    calculateStudentGrade();
+                    calculateClassStats();
+                }
+            });
+
+            // Export zálohy (JSON)
+            exportBtn.addEventListener('click', () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `stupnice_zaloha_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            });
+
+            // Import zálohy (JSON)
+            importFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        if (imported && imported.profiles) {
+                            appData = imported;
+                            persistAppData();
+                            initApp();
+                            alert("Profily boli úspešne načítané zo súboru.");
+                        } else {
+                            alert("Neplatný formát záložného súboru.");
+                        }
+                    } catch (err) {
+                        alert("Chyba pri čítaní súboru: " + err.message);
+                    }
+                    importFileInput.value = '';
+                };
+                reader.readAsText(file);
+            });
+
+            // Toggle editora stupnice
+            toggleScaleEditorBtn.addEventListener('click', () => {
+                const isHidden = scaleEditorSection.classList.contains('hidden');
+                scaleEditorSection.classList.toggle('hidden');
+                toggleScaleText.textContent = isHidden ? 'Zatvoriť úpravy' : 'Upraviť percentá';
+            });
+
+            // Reset stupnice na predvolenú
+            resetScaleBtn.addEventListener('click', () => {
+                if (confirm("Chcete nastaviť predvolené percentá štandardnej stupnice (90, 75, 50, 30, 0%) pre tento profil?")) {
+                    getActiveProfile().scale = JSON.parse(JSON.stringify(DEFAULT_SCALE_MSVVAS));
+                    persistAppData();
+                    loadActiveProfileIntoEditor();
+                    calculateGradeScaleTable();
+                    calculateStudentGrade();
+                    calculateClassStats();
+                    scaleStatusMsg.textContent = "✓ Stupnica obnovená na predvolené hodnoty.";
+                    scaleStatusMsg.classList.remove('hidden');
+                    setTimeout(() => scaleStatusMsg.classList.add('hidden'), 3000);
+                }
+            });
+
+            // Inputy v editore stupnice (autosave)
+            document.querySelectorAll('.scale-input').forEach(input => {
+                input.addEventListener('input', triggerAutoSave);
+            });
+
+            // Zmena maxima bodov testu
+            maxPointsInput.addEventListener('input', () => {
+                const val = maxPointsInput.value;
+                studentMaxPointsInput.value = val;
+                calculateGradeScaleTable();
+                calculateStudentGrade();
+                calculateClassStats();
+            });
+
+            // Rýchle tlačidlá bodov (10, 20, 30, 50, 100)
+            document.querySelectorAll('.quick-point-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const val = btn.dataset.val;
+                    maxPointsInput.value = val;
+                    studentMaxPointsInput.value = val;
+                    calculateGradeScaleTable();
+                    calculateStudentGrade();
+                    calculateClassStats();
+                });
+            });
+
+            // Zmena maxima v študentskej kalkulačke
+            studentMaxPointsInput.addEventListener('input', () => {
+                maxPointsInput.value = studentMaxPointsInput.value;
+                calculateGradeScaleTable();
+                calculateStudentGrade();
+                calculateClassStats();
+            });
+
+            // Zmena získaných bodov žiaka
+            studentAchievedPointsInput.addEventListener('input', calculateStudentGrade);
+
+            // Zmena triednych bodov
+            classPointsInput.addEventListener('input', calculateClassStats);
+
+            // Tlač stránky
+            printPageBtn.addEventListener('click', () => window.print());
+
+            // Kopírovanie tabuľky do schránky (pre vloženie do Wordu / EduPage / mailu)
+            copyTableBtn.addEventListener('click', () => {
+                const maxPts = maxPointsInput.value;
+                const profile = getActiveProfile();
+                let text = `Bodová hodnotiaca stupnica (${profile.name})\nMaximum bodov: ${maxPts} b\n\n`;
+                text += `Známka | Bodový rozsah | Percentá | Hodnotenie\n`;
+                text += `-------------------------------------------------\n`;
+
+                const rows = gradeScaleTableBody.querySelectorAll('tr');
+                rows.forEach(tr => {
+                    const cells = tr.querySelectorAll('td');
+                    if (cells.length >= 4) {
+                        const grade = cells[0].textContent.trim();
+                        const points = cells[1].textContent.trim();
+                        const pct = cells[2].textContent.trim();
+                        const desc = cells[3].textContent.trim();
+                        text += `${grade} | ${points} | ${pct} | ${desc}\n`;
+                    }
+                });
+
+                navigator.clipboard.writeText(text).then(() => {
+                    copyTableText.textContent = "Skopírované!";
+                    setTimeout(() => copyTableText.textContent = "Kopírovať tabuľku", 2000);
+                }).catch(err => {
+                    console.error("Chyba schránky:", err);
+                });
+            });
+        }
+
+        // Štart aplikácie
+        window.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
